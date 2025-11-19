@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Chat</title>
+  <h3><center>AI may make mistakes. Developed by HIRUNTHAKAN</center></h3>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #ffffff;
+    background: linear-gradient(270deg, #FF6B6B, #6B6BFF, #51FF00, #FF00FF, #00FFFF, #FFA500);
+    background-size: 1200% 1200%;
+    animation: backgroundShift 18s ease infinite;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  @keyframes backgroundShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Chat container */
+  .chat-container {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: calc(100vh - 80px);
+  }
+
+  /* Chat bubbles */
+  .message {
+    padding: 15px 20px;
+    border-radius: 18px;
+    font-size: 16px;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    box-sizing: border-box;
+  }
+  .user {
+    max-width: 70%;
+    align-self: flex-end;
+    background: #5100FF;
+    color: #fff;
+    border-bottom-right-radius: 5px;
+  }
+  .bot {
+    max-width: 98%;
+    align-self: flex-start;
+    background: #f4f4f4;
+    color: #000;
+    border-bottom-left-radius: 5px;
+    overflow-wrap: anywhere;
+  }
+  .bot code {
+    background-color: #eee;
+    color: #c7254e;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+  }
+  .bot pre {
+    background-color: #eee;
+    padding: 10px;
+    border-radius: 6px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: monospace;
+  }
+  .bot a {
+    color: #007bff;
+    text-decoration: underline;
+  }
+  .bot blockquote {
+    border-left: 4px solid #ccc;
+    padding-left: 10px;
+    color: #666;
+    margin: 10px 0;
+  }
+
+  /* Input area */
+  .input-container {
+    display: flex;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+  }
+  input[type="text"] {
+    flex: 1;
+    padding: 10px 15px;
+    border: 2px solid #fff;
+    border-radius: 100px;
+    outline: none;
+    font-size: 16px;
+    color: #5100FF;
+    background: #fff;
+  }
+  button {
+    margin-left: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 100px;
+    color: #fff;
+    background: linear-gradient(45deg, #FF6B6B, #6B6BFF, #51FF00);
+    background-size: 300% 300%;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  button:hover { transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<div class="chat-container" id="chat">
+  <div class="message bot">Hi Hirunthakan! How can I help with</div>
+</div>
+
+<div class="input-container">
+  <input type="text" id="message" placeholder="Ask anything..." required />
+  <button onclick="sendMessage()">Send</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+  marked.setOptions({
+    breaks: true,
+    gfm: true,
+    smartLists: true,
+    smartypants: true,
+    headerIds: false,
+    mangle: false
+  });
+
+  function sanitizeHTML(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    div.querySelectorAll('a').forEach(a => {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+    });
+    return div.innerHTML;
+  }
+
+  async function sendMessage() {
+    const messageInput = document.getElementById("message");
+    const message = messageInput.value.trim();
+    if (!message) return;
+
+    const chat = document.getElementById("chat");
+
+    const safeUserText = message
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    chat.innerHTML += `<div class="message user">${safeUserText}</div>`;
+    chat.scrollTop = chat.scrollHeight;
+    messageInput.value = "";
+    messageInput.disabled = true;
+
+    const botBubble = document.createElement("div");
+    botBubble.classList.add("message", "bot");
+    botBubble.innerText = "Thinking...";
+    chat.appendChild(botBubble);
+    chat.scrollTop = chat.scrollHeight;
+
+    const API_KEY = "YOUR_OPENAI_API_KEY";
+
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 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"
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: message }],
+          max_tokens: 2000,
+          temperature: 0.7
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status} ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      const botResponse = data.choices[0].message.content;
+
+      const html = marked.parse(botResponse);
+      botBubble.innerHTML = sanitizeHTML(html);
+
+      chat.scrollTop = chat.scrollHeight;
+    } catch (error) {
+      botBubble.innerText = "Error: " + error.message;
+    } finally {
+      messageInput.disabled = false;
+      messageInput.focus();
+    }
+  }
+</script>
+
+</body>
+  </html>
